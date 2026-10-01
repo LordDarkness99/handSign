@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SignSpeak — Abjad ASL ➜ Suara</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <h1>🤟 SignSpeak</h1>
+      <p class="tagline">Eja huruf ASL dengan tangan, lalu dengarkan hasilnya</p>
+      <div id="modelStatus" class="status">Memuat model…</div>
+    </header>
+
+    <main class="layout">
+      <section class="panel camera-panel">
+        <div class="video-wrap">
+          <video id="video" playsinline muted></video>
+          <canvas id="overlay"></canvas>
+        </div>
+        <div class="controls">
+          <button id="btnStart" class="btn primary">Mulai Kamera</button>
+          <button id="btnStop" class="btn" disabled>Hentikan</button>
+          <button id="btnSpeak" class="btn accent" disabled>Ucapkan Teks</button>
+          <button id="btnClear" class="btn danger">Hapus</button>
+        </div>
+        <div class="live">
+          <div class="chip" id="currentLetter">–</div>
+          <div class="meter"><div class="meter-fill" id="confFill"></div></div>
+          <span class="conf" id="confText">0%</span>
+          <span class="motion" id="motionState">diam</span>
+        </div>
+        <div class="hold">
+          <div class="hold-label">Kestabilan huruf <span id="holdLabel">–</span></div>
+          <div class="hold-bar"><div class="hold-fill" id="holdFill"></div></div>
+          <div class="hold-hint" id="holdHint">Tahan pose huruf sampai bar penuh, lalu pindah ke huruf berikutnya.</div>
+        </div>
+        <div class="top3" id="top3"></div>
+      </section>
+
+      <section class="panel text-panel">
+        <h2>Teks Hasil Ejaan</h2>
+        <div id="textOut" class="text-out" aria-live="polite"><span class="placeholder">Belum ada teks…</span></div>
+        <div class="words" id="words"></div>
+        <div class="hint">
+          <b>Cara mengetik cepat:</b> (1) tahan pose huruf sampai bar kestabilan penuh &amp; huruf
+          masuk ke teks, (2) <b>pindahkan tangan</b> (tangan boleh keluar sebentar) untuk
+          memulai huruf berikutnya, (3) tahan pose huruf kembar lebih lama untuk huruf dobel
+          (mis. <b>LL</b> di “HELLO”). Isyarat khusus: <b>space</b> = pemisah kata,
+          <b>del</b> = hapus satu huruf, <b>nothing</b> = abaikan.
+        </div>
+
+        <h2>Pengaturan</h2>
+        <label>Responsif ↔ teliti (frame): <span id="winVal">5</span>
+          <input type="range" id="win" min="2" max="12" value="5" />
+        </label>
+        <label>Ambang persetujuan: <span id="agrVal">0.70</span>
+          <input type="range" id="agr" min="0.2" max="1" step="0.05" value="0.7" />
+        </label>
+        <label>Tahan untuk huruf dobel (ms): <span id="rpVal">1100</span>
+          <input type="range" id="rp" min="0" max="3000" step="100" value="1100" />
+        </label>
+        <label>Jeda commit (frame): <span id="cdVal">2</span>
+          <input type="range" id="cd" min="0" max="12" value="2" />
+        </label>
+        <label>Kapan ucapkan:
+          <select id="speakMode">
+            <option value="space+idle">Tiap kata (space) + jeda panjang</option>
+            <option value="space">Tiap kata (space)</option>
+            <option value="idle">Jeda panjang saja</option>
+            <option value="manual">Manual (tombol saja)</option>
+          </select>
+        </label>
+        <label>Jeda = kata selesai (ms): <span id="idlVal">2000</span>
+          <input type="range" id="idl" min="800" max="5000" step="100" value="2000" />
+        </label>
+        <label>Suara:
+          <select id="speaker">
+            <option value="netral">Netral</option>
+            <option value="pria">Pria</option>
+            <option value="wanita">Wanita</option>
+            <option value="lambat">Lambat</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="autoSpeak" checked /> Ucapkan otomatis</label>
+      </section>
+
+      <section class="panel history-panel">
+        <h2>Riwayat Suara</h2>
+        <ul id="history" class="history"><li class="empty">Belum ada audio.</li></ul>
+      </section>
+    </main>
+  </div>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

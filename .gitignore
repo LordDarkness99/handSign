@@ -1,0 +1,37 @@
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python caching
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Model hasil fine-tuning (uncomment jika ingin di-track)
+model_speecht5_ljspeech/
+*.zip
+
+# Gambar uji untuk tools/selftest_images.py
+models/test_images/
+
+# Tangkapan layar dokumentasi tetap di-track (result/*.png)
+
+# Data rekaman sampel isyarat (dibuat otomatis dari UI)
+data/samples.jsonl
+data/recordings/
+
+# Logs dan database
+*.log
+*.sqlite3
+
+# OS generated files
+.DS_Store
+Thumbs.db
