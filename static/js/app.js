@@ -24,7 +24,8 @@ async function loadStatus() {
     const r = await fetch("/api/status");
     const s = await r.json();
     const okAsl = s.asl.loaded ? "Model ASL siap" : "Model ASL: " + (s.asl.error || "belum dimuat");
-    const okTts = s.tts.loaded ? "TTS siap" : "TTS: muat saat bicara pertama";
+    const ttsName = s.tts.using_finetuned ? "TTS LJSpeech" : "TTS dasar (microsoft)";
+    const okTts = s.tts.loaded ? ttsName : ttsName + " — muat saat bicara pertama";
     el.textContent = `${okAsl} · ${okTts} · ${s.asl.num_classes} kelas`;
     el.className = "status ok";
   } catch (e) {

@@ -20,6 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 TTS_MODEL_DIR = BASE_DIR / "model_speecht5_ljspeech"
 TOKENIZER_ID = "microsoft/speecht5_tts"
 VOCODER_ID = "microsoft/speecht5_hifigan"
+BASE_TTS_ID = "microsoft/speecht5_tts"   # fallback bila model fine-tune lokal tidak ada
 SAMPLE_RATE = 16000
 SPEAKER_DIM = 512
 
@@ -66,6 +67,8 @@ class TTSEngine:
         self._gen_lock = threading.Lock()
         self.loaded = False
         self.error: Optional[str] = None
+        # Dicek sejak init (bukan hanya saat load) supaya /api/status langsung akurat
+        self.using_finetuned = self._has_local_model()
 
     def ensure_loaded(self) -> bool:
         if self.loaded:
@@ -82,9 +85,22 @@ class TTSEngine:
                 return False
         return True
 
+    def _has_local_model(self) -> bool:
+        """True bila bobot fine-tune lokal tersedia dan bisa dipakai."""
+        if not (self.model_dir / "config.json").exists():
+            return False
+        return any(
+            (self.model_dir / f).exists()
+            for f in ("model.safetensors", "pytorch_model.bin")
+        )
+
     def _load(self) -> None:
-        if not self.model_dir.exists():
-            raise FileNotFoundError(f"direktori model TTS tidak ditemukan: {self.model_dir}")
+        """Muat model TTS.
+
+        Prioritas: model fine-tune lokal `model_speecht5_ljspeech/`. Bila folder itu
+        tidak ada (mis. repo di-clone tanpa bobot, karena >1.7 GB), fall back ke model
+        dasar `microsoft/speecht5_tts` supaya aplikasi tetap bisa berjalan.
+        """
         from transformers import (
             SpeechT5ForTextToSpeech,
             SpeechT5HifiGan,
@@ -92,7 +108,17 @@ class TTSEngine:
         )
 
         self._tokenizer = SpeechT5Tokenizer.from_pretrained(TOKENIZER_ID)
-        self._tts = SpeechT5ForTextToSpeech.from_pretrained(str(self.model_dir))
+        local_ok = (self.model_dir / "config.json").exists() and any(
+            (self.model_dir / f).exists() for f in ("model.safetensors", "pytorch_model.bin")
+        )
+        if local_ok:
+            source = str(self.model_dir)
+            self.using_finetuned = True
+        else:
+            source = BASE_TTS_ID
+            self.using_finetuned = False
+
+        self._tts = SpeechT5ForTextToSpeech.from_pretrained(source)
         self._tts.eval()
         self._vocoder = SpeechT5HifiGan.from_pretrained(VOCODER_ID)
         self._vocoder.eval()
@@ -101,6 +127,8 @@ class TTSEngine:
         return {
             "loaded": self.loaded,
             "error": self.error,
+            "using_finetuned": self.using_finetuned,
+            "model_source": str(self.model_dir) if self.using_finetuned else BASE_TTS_ID,
             "model_dir": str(self.model_dir),
             "tokenizer": TOKENIZER_ID,
             "vocoder": VOCODER_ID,

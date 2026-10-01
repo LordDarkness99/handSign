@@ -37,10 +37,15 @@ if [ ! -f "model-asl/hand_landmarker.task" ]; then
     exit 1
 fi
 
-# Cek model TTS SpeechT5 hasil fine-tuning LJSpeech
+# Cek model TTS SpeechT5 hasil fine-tuning LJSpeech (opsional).
+# Bila folder ini tidak ada, backend otomatis memakai model dasar
+# microsoft/speecht5_tts sehingga aplikasi tetap bisa berjalan.
 if [ ! -f "model_speecht5_ljspeech/config.json" ]; then
-    echo "❌ Error: model TTS tidak ditemukan di $DIR/model_speecht5_ljspeech/"
-    exit 1
+    echo "⚠️  Peringatan: model_speecht5_ljspeech/ tidak ditemukan."
+    echo "   Aplikasi akan memakai model dasar microsoft/speecht5_tts (suara netral)."
+    echo "   Untuk memakai model fine-tune, taruh folder model di:"
+    echo "     $DIR/model_speecht5_ljspeech/"
+    echo "   (lihat bagian 'Mendapatkan Model TTS' di README.md)"
 fi
 
 PORT=${PORT:-8000}

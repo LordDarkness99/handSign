@@ -69,6 +69,64 @@ TextBuffer (space/del/nothing) ──► idle ≥1.6 s ATAU tombol "Ucapkan"
 SpeechT5 (fine-tune LJSpeech) + HiFi-GAN → WAV 16 kHz → diputar + masuk riwayat
 ```
 
+## 🗣️ Mendapatkan Model TTS
+
+Bobot model SpeechT5 hasil fine-tune berukuran **±1,7 GB**, jadi **tidak** disertakan di repo
+Git (GitHub menolak file > 100 MB). Aplikasi tetap bisa berjalan tanpa model tersebut —
+lihat opsi di bawah.
+
+### Opsi A — Pakai model fine-tune (suara LJSpeech, hasil terbaik)
+
+Modelnya dihasilkan oleh proyek
+[**LordDarkness99/text-to-speech**](https://github.com/LordDarkness99/text-to-speech)
+(notebook training `Untitled0 (1).ipynb`). Salin folder model ke project ini:
+
+```bash
+# 1) Ambil proyek TTS-nya
+git clone https://github.com/LordDarkness99/text-to-speech.git
+
+# 2) Salin folder model ke project ini
+cp -r ../text-to-speech/model_speecht5_ljspeech/ ./model_speecht5_ljspeech/
+
+# atau pakai symlink supaya tidak salin 1,7 GB dua kali
+ln -s ../../text-to-speech/model_speecht5_ljspeech model_speecht5_ljspeech
+```
+
+> ⚠️ Repo `text-to-speech` saat ini **belum memuat** folder `model_speecht5_ljspeech/`
+> (hanya notebook, `backend/`, `static/`, dan gambar). Jadi kalau folder itu belum ada
+> di clone Anda, jalankan notebook training-nya lebih dulu, atau pakai **Opsi B**.
+
+Struktur folder model yang dibutuhkan:
+
+```
+model_speecht5_ljspeech/
+├── config.json
+├── model.safetensors      # atau pytorch_model.bin
+└── (generation_config.json, tokenizer, dll. — opsional)
+```
+
+> Berkas yang benar-benar dipakai kode adalah `config.json` + `model.safetensors`/
+> `pytorch_model.bin` (lihat `backend/tts_engine.py`). File lain di folder itu — `optimizer.pt`,
+> `scheduler.pt`, `scaler.pt`, `rng_state.pth`, `trainer_state.json` — tidak diperlukan saat
+> inference dan boleh dihapus untuk menghemat ±1,2 GB.
+
+### Opsi B — Pakai model dasar (default, tanpa unduhan besar)
+
+Kalau folder model fine-tune tidak tersedia, backend **otomatis** memakai model dasar
+[`microsoft/speecht5_tts`](https://huggingface.co/microsoft/speecht5_tts) dari HuggingFace
+(±600 MB, ter-cache otomatis). Alur aplikasi tetap sama persis, hanya kualitas/intonasi
+suara sedikit lebih generik.
+
+Cek model mana yang sedang dipakai:
+
+```bash
+curl -s http://localhost:8000/api/status | python3 -m json.tool | grep -A3 '"tts"'
+# "using_finetuned": true   -> memakai model LJSpeech lokal
+# "using_finetuned": false  -> memakai microsoft/speecht5_tts
+```
+
+Untuk memaksa model dasar, hapus/rename folder `model_speecht5_ljspeech/`.
+
 ## 🗣️ Tentang Model TTS
 
 Model TTS dilatih pada **LJSpeech (bahasa Inggris, huruf kecil)**. Karena teks hasil
@@ -92,7 +150,8 @@ wicHandSign/
 │   └── efficientnet_model.pth      # bobot ASL 29 kelas (dari proyek referensi)
 ├── model-asl/
 │   └── hand_landmarker.task        # MediaPipe HandLandmarker
-├── model_speecht5_ljspeech/        # TTS SpeechT5 hasil fine-tuning LJSpeech
+├── model_speecht5_ljspeech/        # TTS SpeechT5 hasil fine-tuning LJSpeech (OPSIONAL,
+│                                 #   ±1,7 GB, tidak di-git -> lihat "Mendapatkan Model TTS")
 ├── backend/
 │   ├── main.py                     # FastAPI: /api/detect, /api/speak, static
 │   ├── asl_model.py                # EfficientNet-B0 29 kelas + HandLandmarker + crop
